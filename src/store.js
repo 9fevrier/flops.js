@@ -22,25 +22,28 @@
  * SOFTWARE.
  */
 
-import {FlopsBase} from './index'
+import {FlopsBase} from './flops-base'
 import {Operation} from './operation'
 
-export class Store  {
+export class Store extends FlopsBase {
   constructor() {
-    // super()
+    super()
+    this._currentId = 0
     this._operations = []
   }
 
   add(operation) {
-    if (operation instanceof Operation) {
-      this._operations.push(operation)
-    }
+    this._operations.push(operation)
     return this
   }
 
-  createOperation(values) {
-    const operation = new Operation(values)
-    this.add(operation)
-    return this
+  createOperation(funcName, values) {
+      const operation = new Operation(++this._currentId, funcName, values)
+      this.add(operation)
+      return this
+  }
+
+  toString() {
+    return `Flops.Store: ` + JSON.stringify(this._operations)
   }
 }

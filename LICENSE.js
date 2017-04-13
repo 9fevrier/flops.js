@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2017, 9 Février
+ * Copyright (c) ${year}, 9 Février
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,40 +21,3 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-import 'source-map-support/register'
-
-import {FlopsBase} from './flops-base'
-import {PromiseStream} from './promise-stream'
-
-export class Flops extends FlopsBase {
-
-  constructor() {
-    super()
-    this._stream = new PromiseStream()
-  }
-
-
-  get store() {
-    return this._stream.store
-  }
-
-
-  next(fn) {
-    this._stream = this._stream.next(fn)
-    return this
-  }
-
-  done(fn) {
-    this._stream = this._stream.done(fn)
-    return this
-  }
-
-  error(fn) {
-    this._stream = this._stream.error(fn)
-    return this
-  }
-
-
-
-}

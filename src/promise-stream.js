@@ -22,31 +22,50 @@
  * SOFTWARE.
  */
 
-import {FlopsBase} from './index'
+import {FlopsBase} from './flops-base'
 import {Store} from './index'
 
-export class PromiseStream {
+function functionName(fun) {
+  var ret = fun.toString();
+  ret = ret.substr('function '.length);
+  ret = ret.substr(0, ret.indexOf('('));
+  return ret;
+}
+
+export class PromiseStream extends FlopsBase {
 
   constructor() {
-    // super()
+    super()
     this._stream = Promise.resolve()
     this._store = new Store()
+    this._currentId = 0
   }
 
-  add(fn) {
-    this._stream = this._stream.then(fn)
-    return this
+  get store() {
+    return this._store
   }
 
   next(fn) {
-    return this.add(fn).add((values) => {
-      this._store.createOperation(values)
-      return this
-    })
+    if (fn) {
+      this._stream = this._stream
+        .then(fn)
+        .then((values) => {
+          this._store.createOperation(fn.$name, values)
+          return this
+        })
+    } else {
+      this._stream = this._stream.then(() => {
+        return Promise.resolve(this)
+      })
+    }
+    return this
   }
 
   done(fn) {
-    return this.next(fn)
+    this._stream = this._stream.then(() => {
+      return this
+    }).then(fn)
+    return this
   }
 
   error(fn) {
@@ -54,5 +73,14 @@ export class PromiseStream {
     return this
   }
 
+
+  /*
+   next(fn) {
+   return this.add(fn).add((values) => {
+   this._store.createOperation(values)
+   return this
+   })
+   }
+   */
 
 }

@@ -1,0 +1,64 @@
+{
+  "name": "flops-alpha",
+  "version": "0.0.1",
+  "description": "An helper to chain promises",
+  "main": "dist/flops-alpha.dist.js",
+  "scripts": {
+    "test": "./node_modules/.bin/babel-node --presets es2015,stage-1 --plugins transform-decorators-legacy node_modules/mocha/bin/_mocha --recursive -R spec --check-leaks"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/9fevrier/pigalle-mvc.git"
+  },
+  "keywords": [
+    "promise",
+    "flow",
+    "flops",
+    "chain",
+    "es6"
+  ],
+  "author": "9 Février",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/9fevrier/flops/issues"
+  },
+  "homepage": "https://github.com/9fevrier/flops#readme",
+  "devDependencies": {
+    "babel-cli": "^6.14.0",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-export-extensions": "^6.8.0",
+    "babel-preset-es2015": "^6.14.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "babel-preset-stage-1": "^6.5.0",
+    "body-parser": "^1.15.0",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^6.0.0",
+    "express": "^4.13.4",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-concat": "^2.6.0",
+    "gulp-header-license": "^1.0.9",
+    "gulp-load-plugins": "^1.2.0",
+    "gulp-sourcemaps": "^2.2.3",
+    "gulp-strip-comments": "^2.4.3",
+    "gulp-uglify": "^2.0.0",
+    "mocha": "^3.2.0",
+    "require-dir": "^0.3.0",
+    "rollup-plugin-uglify": "^1.0.1",
+    "rollup-stream": "^1.18.0",
+    "should": "^11.1.2",
+    "uglify-js": "^2.7.5",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "dependencies": {
+    "babel-plugin-node-sourcemap-support": "0.0.1",
+    "babel-register": "^6.18.0",
+    "bunyan": "^1.7.1",
+    "enumify": "^1.0.4",
+    "sha1": "^1.1.1",
+    "source-map-support": "^0.4.14",
+    "uuid": "^3.0.1"
+  }
+}

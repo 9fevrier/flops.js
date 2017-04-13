@@ -32,6 +32,7 @@ export class Flopsify {
     this._clz = clz
     this._instance = new this._clz()
     this._handler = this.handler()
+    this._target = null
     this._i = 0
   }
 
@@ -44,48 +45,96 @@ export class Flopsify {
     const self = this
     return {
       get: (target, name, receiver) => {
-        console.log(target.constructor.name + ' ' + name.toString())
-        const originalMethod = target[name]
-        if (this._i === 0) {
-
+        if (!this._target) {
           this._target = target
         }
-        this._i++
+        // console.log(target.constructor.name + ' ' + name.toString())
+        const originalMethod = this._target[name]
+        const next = this._target.next
+        const error = this._target.error
 
-          if (name in target.__proto__) {
-            return (...args) => {
-              originalMethod.apply(target, args)
+        console.log(target.__proto__)
+
+        let fn
+        switch (name.toString()) {
+          case 'next':
+            console.log(`--- NEXT ${name.toString()}`)
+            console.log(next.toString())
+            fn = (...args) => {
+              Object.defineProperty(args[0], '$name', {
+                value: name.toString()
+              });
+              next.apply(this._target, args)
               return this._proxy
             }
-          } else {
-
-          }
-
-        /*
-         console.log(name + ' ' + (name.toString() in self._reserved))
-         if (name.toString() in self._reserved) {
-         console.log('fonction réservée')
-         return Reflect.get(target, name, receiver)
-         } else {
-         // return Reflect.get(target, name, receiver)
-         console.log('normal method = ' + name.toString())
-         return (...args) => {
-         const targetFn = Reflect.get(target, name, receiver)
-         const x = (...args) => {
-         console.log('targetFn ' + name)
-         target.next(targetFn.bind(target, args))
-         console.log('targetFn2' + JSON.stringify(target))
-         return target
-         }
-
-         return x(args)
-         }
+            break
+          case 'error':
+            fn = (...args) => {
+              error.apply(this._target, args)
+              return this._proxy
+            }
+            break
+          case 'store':
+            fn = Reflect.get(target, name, receiver)
+            break
+          default:
+            if ((name !== 'valueOf') && (name in this._target.__proto__)) {
+              console.log(`--- FN NORMAL ${name.toString()}`)
 
 
-         }*/
+              fn = (...args) => {
+
+
+
+                let t = originalMethod.bind(null, args)
+                Object.defineProperty(t, '$name', {
+                  value: name.toString()
+                });
+                next.apply(this._target, [t])
+                return this._proxy
+              }
+
+
+
+
+            } else {
+              console.log(`--- RIEN POUR ${name.toString()}`)
+              fn = Reflect.get(target, name, receiver)
+            }
+            break
+        }
+
+
+        return fn
+
 
       }
+
+      /*
+       console.log(name + ' ' + (name.toString() in self._reserved))
+       if (name.toString() in self._reserved) {
+       console.log('fonction réservée')
+       return Reflect.get(target, name, receiver)
+       } else {
+       // return Reflect.get(target, name, receiver)
+       console.log('normal method = ' + name.toString())
+       return (...args) => {
+       const targetFn = Reflect.get(target, name, receiver)
+       const x = (...args) => {
+       console.log('targetFn ' + name)
+       target.next(targetFn.bind(target, args))
+       console.log('targetFn2' + JSON.stringify(target))
+       return target
+       }
+
+       return x(args)
+       }
+
+
+       }*/
+
     }
+
   }
 
 

@@ -21,40 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-import 'source-map-support/register'
-
-import {FlopsBase} from './flops-base'
-import {PromiseStream} from './promise-stream'
-
-export class Flops extends FlopsBase {
-
-  constructor() {
-    super()
-    this._stream = new PromiseStream()
-  }
-
-
-  get store() {
-    return this._stream.store
-  }
-
-
-  next(fn) {
-    this._stream = this._stream.next(fn)
-    return this
-  }
-
-  done(fn) {
-    this._stream = this._stream.done(fn)
-    return this
-  }
-
-  error(fn) {
-    this._stream = this._stream.error(fn)
-    return this
-  }
-
-
-
-}
+export * from './flops'
+export * from './flopsify'
+export * from './flops-base'
+export * from './operation'
+export * from './promise-stream'
+export * from './store'

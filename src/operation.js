@@ -22,12 +22,15 @@
  * SOFTWARE.
  */
 
-import {FlopsBase} from './index'
+import {FlopsBase} from './flops-base'
 import uuid from 'uuid'
 
-export class Operation  {
-  constructor(results) {
-    // super()
+export class Operation extends FlopsBase {
+
+  constructor(id, funcName, results) {
+    super()
+    this._id = id
+    this._functionName = funcName
     this._uid = uuid.v4()
     this._results = results
   }
