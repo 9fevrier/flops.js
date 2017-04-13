@@ -1,9 +1,14 @@
+
+
 import {flopsify, Flops} from '../dist/flops-alpha.dist'
 
+import util from 'util'
 
 class Ops extends Flops {
   constructor() {
     super()
+    this.heurk = 5
+
   }
 
   hello(name) {
@@ -11,7 +16,7 @@ class Ops extends Flops {
   }
 
   howAreYou() {
-    console.log('passe ici')
+    console.log('howAreYou')
     return Promise.resolve(`How are you ?`)
   }
 
@@ -21,7 +26,16 @@ class Ops extends Flops {
   }
 
   douze(n) {
-    return 12/5
+    console.log('douze')
+    return Promise.resolve(this.heurk * n)
+  }
+
+  $test() {
+    console.log('$test')
+    const r = this.douze(2)
+    console.log(this)
+    console.log('r=' + r)
+    return r.douze(3)
   }
 
 
@@ -40,17 +54,9 @@ const ops = flopsify(Ops)
  console.log(x)
  */
 
-ops.next((instance) => {
-  return 2
-})
+ops.$test()
   .next((instance) => {
-    return 3
-  })
-  .onze(111)
-  .onze()
-  .douze()
-  .next((instance) => {
-    console.log('result = ' + instance.store)
+    console.log('FINAL result = ' + util.inspect(instance.store))
   })
   .error(console.error)
 

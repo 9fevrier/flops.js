@@ -29,6 +29,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Store = exports.PromiseStream = exports.Operation = exports.FlopsBase = exports.flopsify = exports.Flopsify = exports.Flops = undefined;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 require('source-map-support/register');
@@ -154,6 +156,133 @@ var Flops = function (_FlopsBase2) {
 }(FlopsBase);
 
 
+var MethodWrapper = function (_FlopsBase3) {
+  _inherits(MethodWrapper, _FlopsBase3);
+
+  function MethodWrapper(target, proxy, name, receiver) {
+    _classCallCheck(this, MethodWrapper);
+
+    var _this5 = _possibleConstructorReturn(this, (MethodWrapper.__proto__ || Object.getPrototypeOf(MethodWrapper)).call(this));
+
+    _this5._target = target;
+    _this5._proxy = proxy;
+    _this5._name = name;
+    _this5._receiver = receiver;
+    return _this5;
+  }
+
+  _createClass(MethodWrapper, [{
+    key: 'simple',
+    value: function simple() {
+      var _this6 = this;
+
+      if (this.name !== 'valueOf' && this._name in this.target.__proto__) {
+        return function () {
+          for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          var t = _this6.originalMethod.bind(_this6.target, args);
+          Object.defineProperty(t, '$name', {
+            value: _this6._name.toString()
+          });
+          _this6.nextMethod.apply(_this6.target, [t]);
+          return _this6.proxy;
+        };
+      } else {
+        return Reflect.get(this.target, this._name, this.receiver);
+      }
+    }
+  }, {
+    key: 'next',
+    value: function next() {
+      var _this7 = this;
+
+      return function () {
+        for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          args[_key2] = arguments[_key2];
+        }
+
+        Object.defineProperty(args[0], '$name', {
+          value: _this7._name.toString()
+        });
+        _this7.nextMethod.apply(_this7.target, args);
+        return _this7.proxy;
+      };
+    }
+  }, {
+    key: 'error',
+    value: function error() {
+      var _this8 = this;
+
+      return function () {
+        for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+          args[_key3] = arguments[_key3];
+        }
+
+        _this8.errorMethod.apply(_this8.target, args);
+        return _this8.proxy;
+      };
+    }
+  }, {
+    key: 'compose',
+    value: function compose() {
+      var _this9 = this;
+
+      return function () {
+        for (var _len4 = arguments.length, args = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+          args[_key4] = arguments[_key4];
+        }
+
+        console.log('this.proxy' + _this9.proxy);
+        var t = _this9.originalMethod.bind(_this9.proxy, args);
+        Object.defineProperty(t, '$name', {
+          value: _this9._name.toString()
+        });
+        _this9.nextMethod.apply(_this9.target, [t]);
+        return _this9.proxy;
+      };
+    }
+  }, {
+    key: 'target',
+    get: function get() {
+      return this._target;
+    }
+  }, {
+    key: 'proxy',
+    get: function get() {
+      return this._proxy;
+    }
+  }, {
+    key: 'name',
+    get: function get() {
+      return this._name;
+    }
+  }, {
+    key: 'receveiver',
+    get: function get() {
+      return this.receveiver;
+    }
+  }, {
+    key: 'errorMethod',
+    get: function get() {
+      return this.target.error;
+    }
+  }, {
+    key: 'nextMethod',
+    get: function get() {
+      return this.target.next;
+    }
+  }, {
+    key: 'originalMethod',
+    get: function get() {
+      return this._target[this._name];
+    }
+  }]);
+
+  return MethodWrapper;
+}(FlopsBase);
+
 var Flopsify$$1 = function () {
   function Flopsify$$1(clz) {
     _classCallCheck(this, Flopsify$$1);
@@ -175,78 +304,42 @@ var Flopsify$$1 = function () {
   }, {
     key: 'handler',
     value: function handler() {
-      var _this5 = this;
+      var _this10 = this;
 
       var self = this;
       return {
         get: function get(target, name, receiver) {
-          if (!_this5._target) {
-            _this5._target = target;
+          var methodWrapper = new MethodWrapper(target, _this10._proxy, name, receiver);
+          if (!_this10._target) {
+            _this10._target = target;
           }
-          var originalMethod = _this5._target[name];
-          var next = _this5._target.next;
-          var error = _this5._target.error;
-
-          console.log(target.__proto__);
-
-          var fn = void 0;
-          switch (name.toString()) {
-            case 'next':
-              console.log('--- NEXT ' + name.toString());
-              console.log(next.toString());
-              fn = function fn() {
-                for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-                  args[_key] = arguments[_key];
-                }
-
-                Object.defineProperty(args[0], '$name', {
-                  value: name.toString()
-                });
-                next.apply(_this5._target, args);
-                return _this5._proxy;
-              };
-              break;
-            case 'error':
-              fn = function fn() {
-                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-                  args[_key2] = arguments[_key2];
-                }
-
-                error.apply(_this5._target, args);
-                return _this5._proxy;
-              };
-              break;
-            case 'store':
-              fn = Reflect.get(target, name, receiver);
-              break;
-            default:
-              if (name !== 'valueOf' && name in _this5._target.__proto__) {
-                console.log('--- FN NORMAL ' + name.toString());
-
-                fn = function fn() {
-                  for (var _len3 = arguments.length, args = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                    args[_key3] = arguments[_key3];
-                  }
-
-                  var t = originalMethod.bind(null, args);
-                  Object.defineProperty(t, '$name', {
-                    value: name.toString()
-                  });
-                  next.apply(_this5._target, [t]);
-                  return _this5._proxy;
-                };
-              } else {
-                console.log('--- RIEN POUR ' + name.toString());
-                fn = Reflect.get(target, name, receiver);
-              }
-              break;
-          }
-
-          return fn;
+          return _this10.methodDispatcher(methodWrapper);
         }
-
-
       };
+    }
+  }, {
+    key: 'methodDispatcher',
+    value: function methodDispatcher(methodWrapper) {
+      var fn = void 0;
+      if (methodWrapper.name.toString().indexOf('$') === 0) {
+        fn = methodWrapper.compose();
+      } else {
+        switch (methodWrapper.name.toString()) {
+          case 'next':
+            fn = methodWrapper.next();
+            break;
+          case 'error':
+            fn = methodWrapper.error();
+            break;
+          case 'store':
+            fn = Reflect.get(methodWrapper.target, methodWrapper.name, methodWrapper.receiver);
+            break;
+          default:
+            fn = methodWrapper.simple();
+            break;
+        }
+      }
+      return fn;
     }
   }]);
 
@@ -258,36 +351,36 @@ function flopsify$$1(clz) {
 }
 
 
-var Operation = function (_FlopsBase3) {
-  _inherits(Operation, _FlopsBase3);
+var Operation = function (_FlopsBase4) {
+  _inherits(Operation, _FlopsBase4);
 
   function Operation(id, funcName, results) {
     _classCallCheck(this, Operation);
 
-    var _this6 = _possibleConstructorReturn(this, (Operation.__proto__ || Object.getPrototypeOf(Operation)).call(this));
+    var _this11 = _possibleConstructorReturn(this, (Operation.__proto__ || Object.getPrototypeOf(Operation)).call(this));
 
-    _this6._id = id;
-    _this6._functionName = funcName;
-    _this6._uid = _uuid2.default.v4();
-    _this6._results = results;
-    return _this6;
+    _this11._id = id;
+    _this11._functionName = funcName;
+    _this11._uid = _uuid2.default.v4();
+    _this11._results = results;
+    return _this11;
   }
 
   return Operation;
 }(FlopsBase);
 
 
-var Store = function (_FlopsBase4) {
-  _inherits(Store, _FlopsBase4);
+var Store = function (_FlopsBase5) {
+  _inherits(Store, _FlopsBase5);
 
   function Store() {
     _classCallCheck(this, Store);
 
-    var _this7 = _possibleConstructorReturn(this, (Store.__proto__ || Object.getPrototypeOf(Store)).call(this));
+    var _this12 = _possibleConstructorReturn(this, (Store.__proto__ || Object.getPrototypeOf(Store)).call(this));
 
-    _this7._currentId = 0;
-    _this7._operations = [];
-    return _this7;
+    _this12._currentId = 0;
+    _this12._operations = [];
+    return _this12;
   }
 
   _createClass(Store, [{
@@ -299,14 +392,22 @@ var Store = function (_FlopsBase4) {
   }, {
     key: 'createOperation',
     value: function createOperation(funcName, values) {
-      var operation = new Operation(++this._currentId, funcName, values);
-      this.add(operation);
+      var operation = void 0;
+      console.log('typeof=' + (typeof values === 'undefined' ? 'undefined' : _typeof(values)));
+      if (values instanceof Array) {
+        var operations = values;
+        console.log(operations.length);
+        operations.forEach(function (op) {
+          console.log('>>>' + op._results);
+        });
+        console.log('>>>> ' + operations._operations.length);
+      } else {
+
+        operation = new Operation(++this._currentId, funcName, values);
+        this.add(operation);
+      }
+
       return this;
-    }
-  }, {
-    key: 'toString',
-    value: function toString() {
-      return 'Flops.Store: ' + JSON.stringify(this._operations);
     }
   }]);
 

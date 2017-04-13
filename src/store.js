@@ -38,12 +38,23 @@ export class Store extends FlopsBase {
   }
 
   createOperation(funcName, values) {
-      const operation = new Operation(++this._currentId, funcName, values)
-      this.add(operation)
-      return this
+    let operation
+    console.log('typeof=' + typeof(values))
+     if (values instanceof Array) {
+     const operations = values
+       console.log(operations.length)
+     operations.forEach((op) => {
+       console.log('>>>' + op._results)
+     })
+     console.log('>>>> ' + operations._operations.length)
+     } else {
+
+    operation = new Operation(++this._currentId, funcName, values)
+    this.add(operation)
+    }
+
+    return this
   }
 
-  toString() {
-    return `Flops.Store: ` + JSON.stringify(this._operations)
-  }
+
 }

@@ -24,6 +24,90 @@
 
 import {FlopsBase} from './index'
 
+class MethodWrapper extends FlopsBase {
+
+  constructor(target, proxy, name, receiver) {
+    super()
+    this._target = target
+    this._proxy = proxy
+    this._name = name
+    this._receiver = receiver
+  }
+
+  get target() {
+    return this._target
+  }
+
+  get proxy() {
+    return this._proxy
+  }
+
+  get name() {
+    return this._name
+  }
+
+  get receveiver() {
+    return this.receveiver
+  }
+
+  get errorMethod() {
+    return this.target.error
+  }
+
+  get nextMethod() {
+    return this.target.next
+  }
+
+  get originalMethod() {
+    return this._target[this._name]
+  }
+
+  simple() {
+    if ((this.name !== 'valueOf') && (this._name in this.target.__proto__)) {
+      return (...args) => {
+        let t = this.originalMethod.bind(this.target, args)
+        Object.defineProperty(t, '$name', {
+          value: this._name.toString()
+        });
+        this.nextMethod.apply(this.target, [t])
+        return this.proxy
+      }
+    } else {
+      return Reflect.get(this.target, this._name, this.receiver)
+    }
+  }
+
+  next() {
+    return (...args) => {
+      Object.defineProperty(args[0], '$name', {
+        value: this._name.toString()
+      });
+      this.nextMethod.apply(this.target, args)
+      return this.proxy
+    }
+  }
+
+  error() {
+    return (...args) => {
+      this.errorMethod.apply(this.target, args)
+      return this.proxy
+    }
+  }
+
+  compose() {
+    return (...args) => {
+      console.log('this.proxy' + this.proxy)
+      let t = this.originalMethod.bind(this.proxy, args)
+      Object.defineProperty(t, '$name', {
+        value: this._name.toString()
+      });
+      this.nextMethod.apply(this.target, [t])
+      return this.proxy
+    }
+  }
+
+}
+
 export class Flopsify {
 
   constructor(clz) {
@@ -45,98 +129,37 @@ export class Flopsify {
     const self = this
     return {
       get: (target, name, receiver) => {
+        const methodWrapper = new MethodWrapper(target, this._proxy, name, receiver)
         if (!this._target) {
           this._target = target
         }
-        // console.log(target.constructor.name + ' ' + name.toString())
-        const originalMethod = this._target[name]
-        const next = this._target.next
-        const error = this._target.error
-
-        console.log(target.__proto__)
-
-        let fn
-        switch (name.toString()) {
-          case 'next':
-            console.log(`--- NEXT ${name.toString()}`)
-            console.log(next.toString())
-            fn = (...args) => {
-              Object.defineProperty(args[0], '$name', {
-                value: name.toString()
-              });
-              next.apply(this._target, args)
-              return this._proxy
-            }
-            break
-          case 'error':
-            fn = (...args) => {
-              error.apply(this._target, args)
-              return this._proxy
-            }
-            break
-          case 'store':
-            fn = Reflect.get(target, name, receiver)
-            break
-          default:
-            if ((name !== 'valueOf') && (name in this._target.__proto__)) {
-              console.log(`--- FN NORMAL ${name.toString()}`)
-
-
-              fn = (...args) => {
-
-
-
-                let t = originalMethod.bind(null, args)
-                Object.defineProperty(t, '$name', {
-                  value: name.toString()
-                });
-                next.apply(this._target, [t])
-                return this._proxy
-              }
-
-
-
-
-            } else {
-              console.log(`--- RIEN POUR ${name.toString()}`)
-              fn = Reflect.get(target, name, receiver)
-            }
-            break
-        }
-
-
-        return fn
-
-
+        return this.methodDispatcher(methodWrapper)
       }
-
-      /*
-       console.log(name + ' ' + (name.toString() in self._reserved))
-       if (name.toString() in self._reserved) {
-       console.log('fonction réservée')
-       return Reflect.get(target, name, receiver)
-       } else {
-       // return Reflect.get(target, name, receiver)
-       console.log('normal method = ' + name.toString())
-       return (...args) => {
-       const targetFn = Reflect.get(target, name, receiver)
-       const x = (...args) => {
-       console.log('targetFn ' + name)
-       target.next(targetFn.bind(target, args))
-       console.log('targetFn2' + JSON.stringify(target))
-       return target
-       }
-
-       return x(args)
-       }
-
-
-       }*/
-
     }
-
   }
 
+  methodDispatcher(methodWrapper) {
+    let fn
+    if (methodWrapper.name.toString().indexOf('$') === 0) {
+      fn = methodWrapper.compose()
+    } else {
+      switch (methodWrapper.name.toString()) {
+        case 'next':
+          fn = methodWrapper.next()
+          break
+        case 'error':
+          fn = methodWrapper.error()
+          break
+        case 'store':
+          fn = Reflect.get(methodWrapper.target, methodWrapper.name, methodWrapper.receiver)
+          break
+        default:
+          fn = methodWrapper.simple()
+          break
+      }
+    }
+    return fn
+  }
 
 }
 
